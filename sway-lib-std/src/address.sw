@@ -2,6 +2,7 @@
 library;
 
 use ::convert::From;
+use ::hash::*;
 
 /// The `Address` type, a struct wrapper around the inner `b256` value.
 pub struct Address {
@@ -22,5 +23,11 @@ impl From<b256> for Address {
 
     fn into(self) -> b256 {
         self.value
+    }
+}
+
+impl Hash for Address {
+    fn hash(self, ref mut state: Hasher) {
+        self.value.hash(state);
     }
 }

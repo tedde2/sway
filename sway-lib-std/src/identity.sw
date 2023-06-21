@@ -6,6 +6,7 @@ use ::assert::assert;
 use ::address::Address;
 use ::constants::{ZERO_B256, BASE_ASSET_ID};
 use ::contract_id::ContractId;
+use ::hash::*;
 use ::option::Option;
 
 /// The `Identity` type: either an `Address` or a `ContractId`.
@@ -73,4 +74,69 @@ fn test_contract_id() {
     assert(identity.is_contract_id());
     assert(identity.as_contract_id().unwrap() == contract_id);
     assert(identity.as_address().is_none());
+}
+
+impl Identity {
+    pub fn as_address(self) -> Option<Address> {
+        match self {
+            Identity::Address(address) => Option::Some(address),
+            Identity::ContractId(_) => Option::None,
+        }
+    }
+
+    pub fn as_contract_id(self) -> Option<ContractId> {
+        match self {
+            Identity::Address(_) => Option::None,
+            Identity::ContractId(contract_id) => Option::Some(contract_id),
+        }
+    }
+
+    pub fn is_address(self) -> bool {
+        match self {
+            Identity::Address(_) => true,
+            Identity::ContractId(_) => false,
+        }
+    }
+
+    pub fn is_contract_id(self) -> bool {
+        match self {
+            Identity::Address(_) => false,
+            Identity::ContractId(_) => true,
+        }
+    }
+}
+
+#[test]
+fn test_address() {
+    let address = Address::from(ZERO_B256);
+    let identity = Identity::Address(address);
+    assert(identity.is_address());
+    assert(!identity.is_contract_id());
+    assert(identity.as_address().unwrap() == address);
+    assert(identity.as_contract_id().is_none());
+}
+
+#[test]
+fn test_contract_id() {
+    let contract_id = BASE_ASSET_ID;
+    let identity = Identity::ContractId(contract_id);
+    assert(!identity.is_address());
+    assert(identity.is_contract_id());
+    assert(identity.as_contract_id().unwrap() == contract_id);
+    assert(identity.as_address().is_none());
+}
+
+impl Hash for Identity {
+    fn hash(self, ref mut state: Hasher) {
+        match self {
+            Identity::Address(address) => {
+                0_u8.hash(state);
+                address.hash(state);
+            },
+            Identity::ContractId(contract_id) => {
+                1_u8.hash(state);
+                contract_id.hash(state);
+            },
+        }
+    }
 }
