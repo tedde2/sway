@@ -28,7 +28,7 @@ impl Hasher {
 
 impl Hasher {
     /// Writes a single `str` into this hasher.
-    fn write_str<S>(ref mut self, s: S) {
+    pub fn write_str<S>(ref mut self, s: S) {
         let str_size = __size_of_str::<S>();
         let str_ptr = __addr_of(s);
         let mut bytes = Bytes::with_capacity(str_size);
@@ -110,96 +110,20 @@ impl Hash for b256 {
     }
 }
 
-/// Returns the `SHA-2-256` hash of `param`.
-pub fn sha256<T>(param: T) -> b256 {
-    let mut result_buffer: b256 = b256::min();
-    if !__is_reference_type::<T>() {
-        asm(buffer, ptr: param, eight_bytes: 8, hash: result_buffer) {
-            move buffer sp; // Make `buffer` point to the current top of the stack
-            cfei i8; // Grow stack by 1 word
-            sw buffer ptr i0; // Save value in register at "ptr" to memory at "buffer"
-            s256 hash buffer eight_bytes; // Hash the next eight bytes starting from "buffer" into "hash"
-            cfsi i8; // Shrink stack by 1 word
-            hash: b256 // Return
-        }
-    } else {
-        let size = if __is_str_type::<T>() {
-            __size_of_str::<T>()
+impl Hash for bool {
+    fn hash(self, ref mut state: Hasher) {
+        let mut bytes = Bytes::with_capacity(1);
+        if self {
+            bytes.push(1_u8);
         } else {
-            __size_of::<T>()
-        };
-        asm(hash: result_buffer, ptr: param, bytes: size) {
-            s256 hash ptr bytes; // Hash the next "size" number of bytes starting from "ptr" into "hash"
-            hash: b256 // Return
+            bytes.push(0_u8);
         }
-    }
-}
-
-/// Returns the `KECCAK-256` hash of `param`.
-pub fn keccak256<T>(param: T) -> b256 {
-    let mut result_buffer: b256 = b256::min();
-    if !__is_reference_type::<T>() {
-        asm(buffer, ptr: param, eight_bytes: 8, hash: result_buffer) {
-            move buffer sp; // Make `buffer` point to the current top of the stack
-            cfei i8; // Grow stack by 1 word
-            sw buffer ptr i0; // Save value in register at "ptr" to memory at "buffer"
-            k256 hash buffer eight_bytes; // Hash the next eight bytes starting from "buffer" into "hash"
-            cfsi i8; // Shrink stack by 1 word
-            hash: b256 // Return
-        }
-    } else {
-        let size = if __is_str_type::<T>() {
-            __size_of_str::<T>()
-        } else {
-            __size_of::<T>()
-        };
-        asm(hash: result_buffer, ptr: param, bytes: size) {
-            k256 hash ptr bytes; // Hash the next "size" number of bytes starting from "ptr" into "hash"
-            hash: b256 // Return
-        }
+        state.write(bytes);
     }
 }
 
 // Tests
 //
-fn setup() -> (Bytes, u8, u8, u8) {
-    let mut bytes = Bytes::new();
-    let a = 5u8;
-    let b = 7u8;
-    let c = 9u8;
-    bytes.push(a);
-    bytes.push(b);
-    bytes.push(c);
-    (bytes, a, b, c)
-}
-
-#[test()]
-fn test_sha256() {
-    use ::assert::assert;
-    let (mut bytes, _a, _b, _c) = setup();
-    bytes.push(0u8);
-    bytes.push(0u8);
-    bytes.push(0u8);
-    bytes.push(0u8);
-    bytes.push(0u8);
-
-    // The u8 bytes [5, 7, 9, 0, 0, 0, 0, 0] are equivalent to the u64 integer "362268190631264256"
-    assert(sha256(362268190631264256) == bytes.sha256());
-}
-
-#[test()]
-fn test_keccak256() {
-    use ::assert::assert;
-    let (mut bytes, _a, _b, _c) = setup();
-    bytes.push(0u8);
-    bytes.push(0u8);
-    bytes.push(0u8);
-    bytes.push(0u8);
-    bytes.push(0u8);
-
-    // The u8 bytes [5, 7, 9, 0, 0, 0, 0, 0] are equivalent to the u64 integer "362268190631264256"
-    assert(keccak256(362268190631264256) == bytes.keccak256());
-}
 
 #[test()]
 fn test_hasher_sha256_str() {
@@ -285,4 +209,18 @@ fn test_hasher_sha256_b256() {
     0x0000000000000000000000000000000000000000000000000000000000000001.hash(hasher);
     let sha256 = hasher.sha256();
     assert(sha256 == 0xec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc5);
+}
+
+#[test()]
+fn test_hasher_sha256_bool() {
+    use ::assert::assert;
+    let mut hasher = Hasher::new();
+    false.hash(hasher);
+    let sha256 = hasher.sha256();
+    assert(sha256 == 0x6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d);
+
+    let mut hasher = Hasher::new();
+    true.hash(hasher);
+    let sha256 = hasher.sha256();
+    assert(sha256 == 0x4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a);
 }

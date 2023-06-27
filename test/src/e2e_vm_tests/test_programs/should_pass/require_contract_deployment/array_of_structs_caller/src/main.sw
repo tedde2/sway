@@ -1,7 +1,13 @@
 script;
 
 use array_of_structs_abi::{Id, TestContract, Wrapper};
-use std::hash::sha256;
+use std::hash::*;
+
+fn sha256_str<T>(s: T) -> b256 {
+    let mut hasher = Hasher::new();
+    hasher.write_str(s);
+    hasher.sha256()
+}
 
 fn main() -> u64 {
     let addr = abi(TestContract, 0xfd87acbc9cfdbae40894dc1be15c8f5f07a5775ca110df2584f053ac6ad10672);
@@ -26,7 +32,7 @@ fn main() -> u64 {
     assert(result.id.number == 42);
 
     let result = addr.return_element_of_array_of_strings([ "111", "222", "333"]);
-    assert(sha256("111") == sha256(result));
+    assert(sha256_str("111") == sha256_str(result));
 
     1
 }
