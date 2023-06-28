@@ -122,6 +122,18 @@ impl Hash for bool {
     }
 }
 
+pub fn sha256<T>(s: T) -> b256 where T: Hash {
+    let mut hasher = Hasher::new();
+    s.hash(hasher);
+    hasher.sha256()
+}
+
+pub fn keccak256<T>(s: T) -> b256 where T: Hash {
+    let mut hasher = Hasher::new();
+    s.hash(hasher);
+    hasher.keccak256()
+}
+
 // Tests
 //
 
