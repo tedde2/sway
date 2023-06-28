@@ -2,30 +2,11 @@ script;
 
 use std::hash::*;
 
-fn sha256(value: b256) -> b256 {
-    let mut hasher = Hasher::new();
-    value.hash(hasher);
-    hasher.sha256()
-}
-
-fn keccak256(value: b256) -> b256 {
-    let mut hasher = Hasher::new();
-    value.hash(hasher);
-    hasher.keccak256()
-}
-
-fn sha256_tuple(tuple: (b256, b256)) -> b256 {
-    let mut hasher = Hasher::new();
-    tuple.0.hash(hasher);
-    tuple.1.hash(hasher);
-    hasher.sha256()
-}
-
-fn keccak256_tuple(tuple: (b256, b256)) -> b256 {
-    let mut hasher = Hasher::new();
-    tuple.0.hash(hasher);
-    tuple.1.hash(hasher);
-    hasher.keccak256()
+impl Hash for (b256, b256) {
+    fn hash(self, ref mut state: Hasher) {
+        self.0.hash(state);
+        self.1.hash(state);
+    }
 }
 
 fn main() -> u64 {
@@ -42,9 +23,9 @@ fn main() -> u64 {
         3
     } else if !(keccak256(aaaa) == 0x20ee8f1366f06926e9e8771d8fb9007a8537c8dfdb6a3f8c2cfd64db19d2ec90) {
         4
-    } else if !(sha256_tuple((aaaa, abaa)) == 0xa4bca8eb8f338f7fda26960fa43bfe34fbc562e2ee0d7c6e8856c1c587f215ce) {
+    } else if !(sha256((aaaa, abaa)) == 0xa4bca8eb8f338f7fda26960fa43bfe34fbc562e2ee0d7c6e8856c1c587f215ce) {
         5
-    } else if !(keccak256_tuple((aaaa, abaa)) == 0x4fce5a297040d82eecf7b0ae4855ad43698f191ee38820e27748648765bc42bd) {
+    } else if !(keccak256((aaaa, abaa)) == 0x4fce5a297040d82eecf7b0ae4855ad43698f191ee38820e27748648765bc42bd) {
         6
     } else {
         100
