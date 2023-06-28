@@ -29,6 +29,7 @@ impl Hasher {
 impl Hasher {
     /// Writes a single `str` into this hasher.
     pub fn write_str<S>(ref mut self, s: S) {
+        __check_str_type::<S>();
         let str_size = __size_of_str::<S>();
         let str_ptr = __addr_of(s);
         let mut bytes = Bytes::with_capacity(str_size);
